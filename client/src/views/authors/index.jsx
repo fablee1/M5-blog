@@ -3,6 +3,8 @@ import { Container, Card, Row, Col, Button } from "react-bootstrap";
 import { withRouter } from "react-router";
 import { Link } from 'react-router-dom'
 import "./styles.css"
+import { RiDeleteBin6Line } from 'react-icons/ri'
+import { MdEdit } from 'react-icons/md'
 
 const Authors = props => {
 
@@ -33,7 +35,7 @@ const Authors = props => {
                     {
                         authors === [] ?
                         <h2>No Authors Exist</h2>
-                        : authors.map(author => <AuthorCard {...author} />)
+                        : authors.map(author => <AuthorCard {...author} refresh={fetchAuthors} />)
                     }
                 </Row>
             </Container>
@@ -45,6 +47,18 @@ export default withRouter(Authors);
 
 
 const AuthorCard = (props) => {
+
+    const deleteAuthor = async (id) => {
+        const response = await fetch(`http://localhost:3001/authors/${id}`, {
+            method: "DELETE"
+        })
+        if(response.ok) {
+            props.refresh()
+        } else {
+            console.log("error with deleting")
+        }
+    }
+
     return (
         <Col xs={12} md={6} xl={4}>
             <Card>
@@ -57,6 +71,12 @@ const AuthorCard = (props) => {
                             <Card.Text><strong>DOB: </strong>{props.dob}</Card.Text>
                         </div>
                     </div>
+                    <button className="author-card-btn delete-btn" onClick={() => deleteAuthor(props._id)}>
+                        <RiDeleteBin6Line />
+                    </button>
+                    <button className="author-card-btn edit-btn" onClick={() => deleteAuthor(props._id)}>
+                        <MdEdit />
+                    </button>
                 </Card.Body>
             </Card>
         </Col>

@@ -36,11 +36,15 @@ authorsRouter.post("/", (req, res) => {
 
 authorsRouter.put("/:id", (req, res) => {
   const users = JSON.parse(fs.readFileSync(usersJSONPath))
-  const remainingUsers = users.filter(user => user._id !== req.params.id)
-  const modifiedUser = { ...req.body, _id: req.params.id }
-  remainingUsers.push(modifiedUser)
-  fs.writeFileSync(usersJSONPath, JSON.stringify(remainingUsers))
-  res.send(modifiedUser)
+  const targetUserIndex = users.findIndex(user => user._id === req.params.id)
+  const targetUser = users[targetUserIndex]
+  if(targetUser) {
+    users[targetUserIndex] = { ...targetUser, ...req.body }
+    fs.writeFileSync(usersJSONPath, JSON.stringify(users))
+    res.status(200).send(users[targetUserIndex])
+  } else {
+    res.status(400).send({error: "author does not exist"})
+  }
 })
 
 authorsRouter.delete("/:id", (req, res) => {
