@@ -21,11 +21,19 @@ export default class NavBar extends Component {
             >
               Authors
             </Button>
+            <Button
+              as={Link}
+              to="/email"
+              className="menu-button"
+              size="lg"
+            >
+              Check Email
+            </Button>
           </div>
 
           <Button
             as={Link}
-            to="/new"
+            to="/post/new"
             className="blog-navbar-add-button bg-dark"
             size="lg"
           >

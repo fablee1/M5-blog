@@ -35,7 +35,7 @@ const Authors = props => {
                     {
                         authors === [] ?
                         <h2>No Authors Exist</h2>
-                        : authors.map(author => <AuthorCard {...author} refresh={fetchAuthors} />)
+                        : authors.map(author => <AuthorCard {...author} history={props.history} refresh={fetchAuthors} />)
                     }
                 </Row>
             </Container>
@@ -74,7 +74,7 @@ const AuthorCard = (props) => {
                     <button className="author-card-btn delete-btn" onClick={() => deleteAuthor(props._id)}>
                         <RiDeleteBin6Line />
                     </button>
-                    <button className="author-card-btn edit-btn" onClick={() => deleteAuthor(props._id)}>
+                    <button className="author-card-btn edit-btn" onClick={() => props.history.push("/authors/edit/" + props._id)}>
                         <MdEdit />
                     </button>
                 </Card.Body>

@@ -1,60 +1,151 @@
-import React, { Component } from "react";
+import React, { useState, useEffect } from "react";
 import "react-quill/dist/quill.snow.css";
 import ReactQuill from "react-quill";
 import { Container, Form, Button } from "react-bootstrap";
 import "./styles.css";
-export default class NewBlogPost extends Component {
-  constructor(props) {
-    super(props);
-    this.state = { text: "" };
-    this.handleChange = this.handleChange.bind(this);
+
+const NewBlogPost = props => {
+
+  const [categories, setCategories] = useState(null)
+  const [authors, setAuthors] = useState(null)
+
+  const fetchPost = async (id) => {
+    const response = await fetch('http://localhost:3001/posts/' + id)
+    if(response.ok) {
+      const data = await response.json()
+      setForm(data)
+    } else {
+      console.log('error fetching post')
+    }
   }
 
-  handleChange(value) {
-    this.setState({ text: value });
+  const fetchAuthors = async () => {
+    const response = await fetch('http://localhost:3001/authors')
+    if(response.ok) {
+      const data = await response.json()
+      setAuthors(data)
+    } else {
+      console.log('error fetching authors')
+    }
   }
 
-  render() {
-    return (
-      <Container className="new-blog-container">
-        <Form className="mt-5">
-          <Form.Group controlId="blog-form" className="mt-3">
-            <Form.Label>Title</Form.Label>
-            <Form.Control size="lg" placeholder="Title" />
-          </Form.Group>
-          <Form.Group controlId="blog-category" className="mt-3">
-            <Form.Label>Category</Form.Label>
-            <Form.Control size="lg" as="select">
-              <option>Category1</option>
-              <option>Category2</option>
-              <option>Category3</option>
-              <option>Category4</option>
-              <option>Category5</option>
-            </Form.Control>
-          </Form.Group>
-          <Form.Group controlId="blog-content" className="mt-3">
-            <Form.Label>Blog Content</Form.Label>
-            <ReactQuill
-              value={this.state.text}
-              onChange={this.handleChange}
-              className="new-blog-content"
-            />
-          </Form.Group>
-          <Form.Group className="d-flex mt-3 justify-content-end">
-            <Button type="reset" size="lg" variant="outline-dark">
-              Reset
-            </Button>
-            <Button
-              type="submit"
-              size="lg"
-              variant="dark"
-              style={{ marginLeft: "1em" }}
-            >
-              Submit
-            </Button>
-          </Form.Group>
-        </Form>
-      </Container>
-    );
+  const fetchCategories = async () => {
+    const response = await fetch('http://localhost:3001/posts')
+    if(response.ok) {
+      const data = await response.json()
+      setCategories(Array.from(new Set(data.map(p => p.category))))
+    } else {
+      console.log('error fetching categories')
+    }
   }
+
+  useEffect(() => {
+    fetchAuthors()
+    fetchCategories()
+    if(props.match.params.id) {
+      fetchPost(props.match.params.id)
+    }
+  }, [])
+
+  const [form, setForm] = useState({category: '', title: '', cover: '', readTime: {}, author: {}, content: ''})
+
+  const changeForm = (e) => {
+    setForm({...form, [e.target.id]: e.target.value})
+  }
+
+  const postPost = async () => {
+    const response = await fetch("http://localhost:3001/posts", {
+        method: "POST",
+        body: JSON.stringify(form),
+        headers: {
+            "Content-Type": "application/json"
+        }
+    })
+    if(response.ok) {
+        const data = await response.json()
+    } else {
+        console.log(response)
+    }
+  }
+
+  const editPost = async () => {
+      const response = await fetch("http://localhost:3001/posts/" + form._id, {
+          method: "PUT",
+          body: JSON.stringify(form),
+          headers: {
+              "Content-Type": "application/json"
+          }
+      })
+      if(response.ok) {
+          const data = await response.json()
+      } else {
+          console.log(response)
+      }
+  }
+
+  const handlePost = async (e) => {
+    e.preventDefault()
+
+    if(!props.match.params.id) {
+      await postPost()
+    } else {
+      await editPost()
+    }
+    props.history.push("/")
+  }
+
+  return (
+    <Container className="new-blog-container">
+      <Form className="mt-5" onSubmit={(e) => handlePost(e)} >
+        <Form.Group controlId="title" className="mt-3">
+          <Form.Label>Title</Form.Label>
+          <Form.Control size="lg" placeholder="Title" value={form.title} onChange={(e) => changeForm(e)} />
+        </Form.Group>
+        <Form.Group controlId="category" className="mt-3">
+          <Form.Label>Category</Form.Label>
+          <Form.Control size="lg" as="select">
+            {
+              categories && categories.map(cat => <option>{cat}</option>)
+            }
+          </Form.Control>
+        </Form.Group>
+        <Form.Group controlId="author" className="mt-3">
+          <Form.Label>Author</Form.Label>
+          <Form.Control size="lg" as="select">
+            {
+              authors && authors.map(a => <option>{a.name} {a.surname}</option>)
+            }
+          </Form.Control>
+        </Form.Group>
+        <Form.Group controlId="cover" className="mt-3">
+          <Form.Label>Cover URL</Form.Label>
+          <Form.Control size="lg" placeholder="URL" />
+        </Form.Group>
+        <Form.Group controlId="content" className="mt-3">
+          <Form.Label>Blog Content</Form.Label>
+          <ReactQuill
+            value={form.content}
+            onChange={(e) => changeForm(e)}
+            className="new-blog-content"
+          />
+        </Form.Group>
+        <Form.Group className="d-flex mt-3 justify-content-end">
+          <Button type="reset" size="lg" variant="outline-dark">
+            Reset
+          </Button>
+          <Button
+            type="submit"
+            size="lg"
+            variant="dark"
+            style={{ marginLeft: "1em" }}
+          >
+            Submit
+          </Button>
+        </Form.Group>
+      </Form>
+    </Container>
+  );
 }
+
+
+export default NewBlogPost

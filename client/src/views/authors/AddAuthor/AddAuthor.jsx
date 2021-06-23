@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Container, Form, Col, Button, Row } from 'react-bootstrap'
 import './styles.css'
 
@@ -10,6 +10,22 @@ const AddAuthor = (props) => {
         setData({...data, [e.target.id]: e.target.value})
     }
 
+    const fetchAuthor = async (id) => {
+        const response = await fetch("http://localhost:3001/authors/" + id)
+        if(response.ok) {
+            const authorData = await response.json()
+            setData(authorData)
+        } else {
+            console.log(response)
+        }
+    }
+
+    useEffect(() => {
+        if(props.match.params.id) {
+            fetchAuthor(props.match.params.id)
+        }
+    }, [])
+
     const postAuthor = async () => {
         const response = await fetch("http://localhost:3001/authors", {
             method: "POST",
@@ -19,26 +35,43 @@ const AddAuthor = (props) => {
             }
         })
         if(response.ok) {
-            console.log(response)
             const data = await response.json()
-            console.log(data)
         } else {
             console.log(response)
         }
-
     }
 
-    const handlePost = async (e) => {
+    const editAuthor = async () => {
+        const response = await fetch("http://localhost:3001/authors/" + data._id, {
+            method: "PUT",
+            body: JSON.stringify(data),
+            headers: {
+                "Content-Type": "application/json"
+            }
+        })
+        if(response.ok) {
+            const data = await response.json()
+        } else {
+            console.log(response)
+        }
+    }
+
+    const handleAuthor = async (e) => {
         e.preventDefault()
-        await postAuthor()
+        if(!props.match.params.id) {
+            await postAuthor()
+        } else {
+            await editAuthor()
+        }
         props.history.push("/authors")
     }
 
     return (
-        <Container>
+        <Container className="add-author-cont">
             <Row>
+                <h1>{props.match.params.id ? "Edit Author" : "Add Author"}</h1>
                 <Col xs={12} md={{offset: 3, span: 6}}>
-                    <Form className="add-author-form" onSubmit={(e) => handlePost(e)}>
+                    <Form className="add-author-form" onSubmit={(e) => handleAuthor(e)}>
                         <Form.Row as={Row}>
                             <Form.Group as={Col} controlId="name">
                                 <Form.Label>Name</Form.Label>
