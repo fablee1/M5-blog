@@ -1,23 +1,40 @@
-import React, { Component } from "react";
-import { Card } from "react-bootstrap";
-import BlogAuthor from "../blog-author";
-import { Link } from "react-router-dom";
-import "./styles.css";
-export default class BlogItem extends Component {
-  render() {
-    const { title, cover, author, _id } = this.props;
-    return (
-      <Link to={`/blog/${_id}`} className="blog-link">
-        <Card className="blog-card">
-          <Card.Img variant="top" src={cover} className="blog-cover" />
-          <Card.Body>
-            <Card.Title>{title}</Card.Title>
-          </Card.Body>
-          <Card.Footer>
-            <BlogAuthor {...author} />
-          </Card.Footer>
-        </Card>
-      </Link>
-    );
+import React, { Component } from "react"
+import { Card } from "react-bootstrap"
+import BlogAuthor from "../blog-author"
+import { Link } from "react-router-dom"
+import { RiDeleteBin6Line } from "react-icons/ri"
+import "./styles.css"
+
+const BlogItem = (props) => {
+  const deletePost = async () => {
+    const response = await fetch("http://localhost:3001/posts/" + props._id, {
+      method: "DELETE",
+    })
+    if (response.ok) {
+      console.log("deleted")
+    } else {
+      console.log("error deleting")
+    }
   }
+
+  return (
+    <Link to={`/blog/${props._id}`} className="blog-link">
+      <Card className="blog-card">
+        <Card.Img variant="top" src={props.cover} className="blog-cover" />
+        <Card.Body>
+          <Card.Title>{props.title}</Card.Title>
+        </Card.Body>
+        <Card.Footer>
+          <BlogAuthor {...props.author} />
+          <button
+            className="author-card-btn delete-btn"
+            onClick={() => deletePost()}>
+            <RiDeleteBin6Line />
+          </button>
+        </Card.Footer>
+      </Card>
+    </Link>
+  )
 }
+
+export default BlogItem
