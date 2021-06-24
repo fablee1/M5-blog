@@ -5,9 +5,11 @@ import { Container, Form, Button } from "react-bootstrap";
 import "./styles.css";
 
 const NewBlogPost = props => {
-
+  
   const [categories, setCategories] = useState(null)
   const [authors, setAuthors] = useState(null)
+  const [form, setForm] = useState({category: '', title: '', cover: '', readTime: {}, author: {}, content: ''})
+  const [newCategory, setNewCategory] = useState(false)
 
   const fetchPost = async (id) => {
     const response = await fetch('http://localhost:3001/posts/' + id)
@@ -24,6 +26,7 @@ const NewBlogPost = props => {
     if(response.ok) {
       const data = await response.json()
       setAuthors(data)
+      setForm({...form, author: data[0]})
     } else {
       console.log('error fetching authors')
     }
@@ -47,7 +50,6 @@ const NewBlogPost = props => {
     }
   }, [])
 
-  const [form, setForm] = useState({category: '', title: '', cover: '', readTime: {}, author: {}, content: ''})
 
   const changeForm = (e) => {
     setForm({...form, [e.target.id]: e.target.value})
@@ -103,29 +105,39 @@ const NewBlogPost = props => {
         </Form.Group>
         <Form.Group controlId="category" className="mt-3">
           <Form.Label>Category</Form.Label>
-          <Form.Control size="lg" as="select">
+          <Form.Control size="lg" as="select" onChange={(e) => { changeForm(e); e.target.value === 'new' ? setNewCategory(true) : setNewCategory(false)}}>
+            <option>Choose...</option>
+            <option value="new">New Category</option>
             {
-              categories && categories.map(cat => <option>{cat}</option>)
+              categories && categories.map(cat => <option value={cat}>{cat}</option>)
             }
           </Form.Control>
         </Form.Group>
+        {
+          newCategory && (
+            <Form.Group controlId="category" className="mt-3">
+              <Form.Label>New Category</Form.Label>
+              <Form.Control size="lg" value={form.category} onChange={(e) => changeForm(e)} />
+            </Form.Group>
+          )
+        }
         <Form.Group controlId="author" className="mt-3">
           <Form.Label>Author</Form.Label>
-          <Form.Control size="lg" as="select">
+          <Form.Control size="lg" as="select" onChange={(e) => changeForm(e)}>
             {
-              authors && authors.map(a => <option>{a.name} {a.surname}</option>)
+              authors && authors.map(a => <option value={a}>{a.name} {a.surname}</option>)
             }
           </Form.Control>
         </Form.Group>
         <Form.Group controlId="cover" className="mt-3">
           <Form.Label>Cover URL</Form.Label>
-          <Form.Control size="lg" placeholder="URL" />
+          <Form.Control size="lg" placeholder="URL" value={form.cover} onChange={(e) => changeForm(e)} />
         </Form.Group>
         <Form.Group controlId="content" className="mt-3">
           <Form.Label>Blog Content</Form.Label>
           <ReactQuill
             value={form.content}
-            onChange={(e) => changeForm(e)}
+              onChange={(value) => setForm({...form, content: value})}
             className="new-blog-content"
           />
         </Form.Group>

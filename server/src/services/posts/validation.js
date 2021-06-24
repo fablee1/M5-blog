@@ -6,5 +6,5 @@ export const postsValidation = [
   body("cover").exists().withMessage("Cover is a mandatory field!").isURL().withMessage("Cover should be an URL!"),
   body("readTime").exists().withMessage("ReadTime is a mandatory field!"),
   body("author").exists().withMessage("Author is a mandatory field!"),
-  body("Content").exists().withMessage("Content is a mandatory field!"),
+  body("content").exists().withMessage("Content is a mandatory field!"),
 ]
