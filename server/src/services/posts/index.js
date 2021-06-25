@@ -6,8 +6,7 @@ import uniqid from "uniqid"
 
 import createError from "http-errors"
 import { validationResult } from "express-validator"
-import { postsValidation } from "../posts/validation.js"
-import { getAuthors } from "./../authors/index.js"
+import { postsValidation } from "../../middlewares/validation/postsValidation.js"
 
 const postsRouter = express.Router()
 
@@ -32,13 +31,8 @@ postsRouter.get("/:id", (req, res, next) => {
   try {
     const posts = getPosts()
     const post = posts.find((p) => p._id === req.params.id)
-    const author = getAuthors().find((a) => a._id === post.author)
-    const postWithAuthor = {
-      ...post,
-      author: author,
-    }
     if (post) {
-      res.send(postWithAuthor)
+      res.send(post)
     } else {
       next(createError(404, `Post with id ${req.params.id} not found!`))
     }
@@ -51,7 +45,14 @@ postsRouter.post("/", postsValidation, (req, res, next) => {
   try {
     const errors = validationResult(req)
     if (errors.isEmpty()) {
-      const newPost = { ...req.body, _id: uniqid(), createdAt: new Date() }
+      const author = getAuthors().find((a) => a._id === req.body.author)
+      console.log(getAuthors())
+      const newPost = {
+        ...req.body,
+        _id: uniqid(),
+        createdAt: new Date(),
+        author: author,
+      }
       const posts = getPosts()
       posts.push(newPost)
       writePosts(posts)

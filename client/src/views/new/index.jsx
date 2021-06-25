@@ -12,7 +12,7 @@ const NewBlogPost = (props) => {
     title: "",
     cover: "",
     readTime: {},
-    authorId: "",
+    author: "",
     content: "",
   })
   const [newCategory, setNewCategory] = useState(false)
@@ -32,7 +32,7 @@ const NewBlogPost = (props) => {
     if (response.ok) {
       const data = await response.json()
       setAuthors(data)
-      setForm({ ...form, author: data[0] })
+      setForm({ ...form, author: data[0]._id })
     } else {
       console.log("error fetching authors")
     }

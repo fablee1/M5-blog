@@ -25,7 +25,7 @@ const BlogList = () => {
       {posts &&
         posts.map((post) => (
           <Col md={4} style={{ marginBottom: 50 }}>
-            <BlogItem key={post.title} {...post} />
+            <BlogItem key={post.title} {...post} refresh={fetchPosts} />
           </Col>
         ))}
     </Row>

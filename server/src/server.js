@@ -1,31 +1,35 @@
 import express from "express"
+
 import listEndpoints from "express-list-endpoints"
 import cors from "cors"
+import createError from "http-errors"
+import morgan from "morgan"
 
 import authorsRouter from "./services/authors/index.js"
 import postsRouter from "./services/posts/index.js"
-import { catchErrorMiddleware, badRequestMiddleware, notFoundMiddleware } from "./errorMiddlewares.js"
+import { errorMiddlewares } from "./middlewares/error/errors.js"
 
 const port = 3001
-const server = express()
 
-const logger = (req, res, next) => {
-  console.log(`New Request --> ${req.method} ${req.url} -- ${new Date()}`)
-  next()
-}
+const server = express()
 
 server.use(cors())
 server.use(express.json())
-server.use(logger)
+server.use(morgan("common"))
 
 server.use("/authors", authorsRouter)
 server.use("/posts", postsRouter)
 
-server.use(notFoundMiddleware)
-server.use(badRequestMiddleware)
-server.use(catchErrorMiddleware)
+server.use([errorMiddlewares])
 
 console.table(listEndpoints(server))
+
+server.use((req, res) => {
+  if (!req.route) {
+    const error = createError(404, "This route is not found!")
+    res.status(error.status).send(error)
+  }
+})
 
 server.listen(port, () => {
   console.log("Server is running on port " + port)

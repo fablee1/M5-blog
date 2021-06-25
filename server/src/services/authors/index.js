@@ -1,73 +1,60 @@
-import express from "express"
-import fs from "fs"
-import { fileURLToPath } from "url"
-import { dirname, join } from "path"
+import { Router } from "express"
+import fs from "fs-extra"
 import uniqid from "uniqid"
+import { readFile, writeFile, findById } from "../../utils/file-utils.js"
 
 import createError from "http-errors"
 import { validationResult } from "express-validator"
-import { authorsValidation } from "../authors/validation.js"
+import {
+  checkAuthorExists,
+  checkPostAuthorSchema,
+  validatePostAuthorSchema,
+} from "../../middlewares/validation/authors/postAuthors.js"
+import { filterAuthorsBody } from "../../middlewares/sanitize/authors/authorsSanitize.js"
+const authorsRouter = Router()
 
-const authorsRouter = express.Router()
-
-const authorsJSONPath = join(
-  dirname(fileURLToPath(import.meta.url)),
-  "authors.json"
-)
-
-export const getAuthors = () => JSON.parse(fs.readFileSync(authorsJSONPath))
-const writeAuthors = (content) =>
-  fs.writeFileSync(authorsJSONPath, JSON.stringify(content))
-
-authorsRouter.get("/", (req, res, next) => {
+authorsRouter.get("/", async (req, res, next) => {
   try {
-    res.send(getAuthors())
+    const authors = await readFile("authors.json")
+    res.send(authors)
   } catch (error) {
     next(error)
   }
 })
 
-authorsRouter.get("/:id", (req, res, next) => {
+authorsRouter.get("/:id", async (req, res, next) => {
   try {
-    const users = getAuthors()
-    const user = users.find((u) => u._id === req.params.id)
-    if (user) {
-      res.send(user)
-    } else {
-      next(createError(404, `User with id ${req.params.id} not found!`))
-    }
+    const author = await findById(req.params.id, "authors.json")
+    res.send(author)
   } catch (error) {
     next(error)
   }
 })
 
-authorsRouter.post("/", authorsValidation, (req, res, next) => {
-  try {
-    const errors = validationResult(req)
-
-    if (errors.isEmpty()) {
+authorsRouter.post(
+  "/",
+  checkPostAuthorSchema,
+  validatePostAuthorSchema,
+  filterAuthorsBody,
+  checkAuthorExists,
+  async (req, res, next) => {
+    try {
       const avatar = `https://ui-avatars.com/api/?name=${req.body.name}+${req.body.surname}`
       const newUser = {
         ...req.body,
         _id: uniqid(),
         createdAt: new Date(),
+        updatedAt: new Date(),
         avatar: avatar,
       }
-      const users = getAuthors()
-      if (users.some((user) => user.email === req.body.email)) {
-        res.status(400).send({ error: "Email already registered" })
-      } else {
-        users.push(newUser)
-        writeAuthors(users)
-        res.status(201).send({ _id: newUser._id })
-      }
-    } else {
-      next(createError(400, { errorsList: errors }))
+      res.locals.authors.push(newUser)
+      writeAuthors(res.locals.authors)
+      res.status(201).send({ _id: newUser._id })
+    } catch (error) {
+      next(error)
     }
-  } catch (error) {
-    next(error)
   }
-})
+)
 
 authorsRouter.put("/:id", (req, res, next) => {
   try {
