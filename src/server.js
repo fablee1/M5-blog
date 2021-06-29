@@ -9,13 +9,23 @@ import authorsRouter from "./services/authors/index.js"
 import postsRouter from "./services/posts/index.js"
 import { errorMiddlewares } from "./middlewares/error/errors.js"
 
-const port = 3001
-
+const port = process.env.PORT || 3001
 const server = express()
 
-server.use(cors())
+// Middlewares
+const whitelist = [process.env.FRONTEND_URL, process.env.FRONTEND_PROD_URL]
+
+server.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || whitelist.indexOf(origin) !== -1) {
+        callback(null, true)
+      }
+    },
+  })
+)
 server.use(express.json())
-server.use(morgan("common"))
+server.use(morgan("dev"))
 
 server.use("/authors", authorsRouter)
 server.use("/posts", postsRouter)
