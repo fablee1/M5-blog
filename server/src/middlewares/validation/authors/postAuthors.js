@@ -1,6 +1,7 @@
 import { checkSchema, validationResult } from "express-validator"
 import { readFile } from "../../../utils/file-utils.js"
 import createError from "http-errors"
+import { filterAuthorsBody } from "../../sanitize/authors/authorsSanitize.js"
 
 const schema = {
   name: {
@@ -40,9 +41,9 @@ const schema = {
     },
   },
 }
-export const checkPostAuthorSchema = checkSchema(schema)
+const checkPostAuthorSchema = checkSchema(schema)
 
-export const validatePostAuthorSchema = (req, res, next) => {
+const validatePostAuthorSchema = (req, res, next) => {
   const errors = validationResult(req)
   if (!errors.isEmpty()) {
     return res.status(400).json({
@@ -54,9 +55,9 @@ export const validatePostAuthorSchema = (req, res, next) => {
   }
 }
 
-export const checkAuthorExists = async (req, res, next) => {
+const checkAuthorEmailExists = async (req, res, next) => {
   const authors = await readFile("authors.json")
-  if (authors.some((a) => a.email !== req.body.email)) {
+  if (!authors.some((a) => a.email === req.body.email)) {
     res.locals.authors = authors
     next()
   } else {
@@ -65,3 +66,12 @@ export const checkAuthorExists = async (req, res, next) => {
     )
   }
 }
+
+const postAuthorsMiddlewares = [
+  checkPostAuthorSchema,
+  validatePostAuthorSchema,
+  filterAuthorsBody,
+  checkAuthorEmailExists,
+]
+
+export default postAuthorsMiddlewares

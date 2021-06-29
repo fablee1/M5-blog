@@ -1,41 +1,26 @@
-import express from "express"
-import fs from "fs"
-import { fileURLToPath } from "url"
-import { dirname, join } from "path"
+import { Router } from "express"
 import uniqid from "uniqid"
 
 import createError from "http-errors"
 import { validationResult } from "express-validator"
 import { postsValidation } from "../../middlewares/validation/postsValidation.js"
+import { readFile, findById, writeFile } from "../../utils/file-utils.js"
 
-const postsRouter = express.Router()
+const postsRouter = Router()
 
-const postsJSONPath = join(
-  dirname(fileURLToPath(import.meta.url)),
-  "posts.json"
-)
-
-const getPosts = () => JSON.parse(fs.readFileSync(postsJSONPath))
-const writePosts = (content) =>
-  fs.writeFileSync(postsJSONPath, JSON.stringify(content))
-
-postsRouter.get("/", (req, res, next) => {
+postsRouter.get("/", async (req, res, next) => {
   try {
-    res.send(getPosts())
+    const posts = await readFile("posts.json")
+    res.send(posts)
   } catch (error) {
     next(error)
   }
 })
 
-postsRouter.get("/:id", (req, res, next) => {
+postsRouter.get("/:id", async (req, res, next) => {
   try {
-    const posts = getPosts()
-    const post = posts.find((p) => p._id === req.params.id)
-    if (post) {
-      res.send(post)
-    } else {
-      next(createError(404, `Post with id ${req.params.id} not found!`))
-    }
+    const post = await findById(req.params.id, "posts.json")
+    res.send(post)
   } catch (error) {
     next(error)
   }
@@ -82,11 +67,11 @@ postsRouter.put("/:id", (req, res, next) => {
   }
 })
 
-postsRouter.delete("/:id", (req, res, next) => {
+postsRouter.delete("/:id", async (req, res, next) => {
   try {
-    const posts = getPosts()
+    const posts = await readFile("posts.json")
     const remainingPosts = posts.filter((p) => p._id !== req.params.id)
-    writePosts(remainingPosts)
+    await writeFile("posts.json", remainingPosts)
     res.status(204).send()
   } catch (error) {
     next(error)
