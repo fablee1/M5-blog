@@ -1,10 +1,23 @@
 import { Router } from "express"
 import uniqid from "uniqid"
 
+import multer from "multer"
+import { v2 as cloudinary } from "cloudinary"
+import { CloudinaryStorage } from "multer-storage-cloudinary"
+
 import createError from "http-errors"
-import { validationResult } from "express-validator"
-import { postsValidation } from "../../middlewares/validation/postsValidation.js"
 import { readFile, findById, writeFile } from "../../utils/file-utils.js"
+
+const cloudinaryStorage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: "posts",
+  },
+})
+
+const uploadOnCloudinary = multer({ storage: cloudinaryStorage }).single(
+  "cover"
+)
 
 const postsRouter = Router()
 
@@ -26,38 +39,56 @@ postsRouter.get("/:id", async (req, res, next) => {
   }
 })
 
-postsRouter.post("/", postsValidation, (req, res, next) => {
+postsRouter.post("/", async (req, res, next) => {
   try {
-    const errors = validationResult(req)
-    if (errors.isEmpty()) {
-      const author = getAuthors().find((a) => a._id === req.body.author)
-      console.log(getAuthors())
-      const newPost = {
-        ...req.body,
-        _id: uniqid(),
-        createdAt: new Date(),
-        author: author,
-      }
-      const posts = getPosts()
-      posts.push(newPost)
-      writePosts(posts)
-      res.status(201).send({ _id: newPost._id })
+    const authors = await readFile("authors.json")
+    const author = authors.find((a) => a._id === req.body.author)
+    const readTime = {
+      value: (req.body.content.length / 17).toPrecision(1),
+      unit: "second",
+    }
+    const newPost = {
+      ...req.body,
+      _id: uniqid(),
+      createdAt: new Date(),
+      author,
+      readTime,
+    }
+    const posts = await readFile("posts.json")
+    posts.push(newPost)
+    await writeFile("posts.json", posts)
+    res.status(201).send({ _id: newPost._id })
+  } catch (error) {
+    next(error)
+  }
+})
+
+postsRouter.post("/:id/upload", uploadOnCloudinary, async (req, res, next) => {
+  try {
+    const posts = await readFile("posts.json")
+    const targetPostIndex = posts.findIndex((p) => p._id === req.params.id)
+    console.log(targetPostIndex)
+    if (targetPostIndex !== -1) {
+      const targetPost = posts[targetPostIndex]
+      posts[targetPostIndex] = { ...targetPost, cover: req.file.url }
+      await writeFile("posts.json", posts)
+      res.status(200).send(posts[targetPostIndex])
     } else {
-      next(createError(400, { errorsList: errors }))
+      res.status(400).send({ error: "post does not exist" })
     }
   } catch (error) {
     next(error)
   }
 })
 
-postsRouter.put("/:id", (req, res, next) => {
+postsRouter.put("/:id", async (req, res, next) => {
   try {
-    const posts = getPosts()
+    const posts = await readFile("posts.json")
     const targetPostIndex = posts.findIndex((p) => p._id === req.params.id)
-    const targetPost = posts[targetPostIndex]
-    if (targetPost) {
-      posts[targetPostIndex] = { ...targetpost, ...req.body }
-      writePosts(posts)
+    if (targetPostIndex !== -1) {
+      const targetPost = posts[targetPostIndex]
+      posts[targetPostIndex] = { ...targetPost, ...req.body }
+      await writeFile("posts.json", posts)
       res.status(200).send(posts[targetPostIndex])
     } else {
       res.status(400).send({ error: "post does not exist" })

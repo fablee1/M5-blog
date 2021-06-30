@@ -21,24 +21,6 @@ const schema = {
       errorMessage: "Category must be string!",
     },
   },
-  readTime: {
-    in: ["body"],
-    exists: {
-      errorMessage: "Read time is mandatory",
-    },
-    isObject: {
-      errorMessage: "Email must be a valid one!",
-    },
-  },
-  dob: {
-    in: ["body"],
-    exists: {
-      errorMessage: "DOB is mandatory",
-    },
-    isDate: {
-      errorMessage: "DOB must be a date",
-    },
-  },
 }
 export const checkPostPostSchema = checkSchema(schema)
 
